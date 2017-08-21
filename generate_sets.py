@@ -17,7 +17,7 @@ import scipy.io as sio
 import sklearn
 import math
 
- # auto-detect width of terminal for displaying dataframes
+# auto-detect width of terminal for displaying dataframes
 pd.set_option('display.max_columns',0)
 plt.ion() # Solves that stupid iPython matplotlib hang problem
 pd.options.mode.chained_assignment = None 
@@ -31,9 +31,26 @@ np.set_printoptions(suppress=True)
 '''
 
 def open_CSVs(path):
+    ''' Opens CSVs as pandas data frames
+
+    Args:
+        path: str, main path
+
+    Returns:
+        pandas data frames
+        aisles_df:                  aisle information
+        departments_df:             department information
+        order_products_prior_df:    prior orders from user with product num IDs
+        order_products_train_df:    last order from user with product number IDs
+                                    used for validation testing
+        orders_df:                  all user orders information, no product IDs
+                                    includes priors, training, and test data
+        products_df:                product number IDs matched with names
+        sample_submission_df:       Kaggle submission example
+        
+    '''
     path = path+'/instacart_2017_05_01'
     # Open CSVs
-    # This takes a while, avoid running this cell.
     print('loading aisles')
     aisles_df = pd.read_csv(path+"/aisles.csv", dtype= { 
             'aisle_id': np.int32, \
@@ -75,6 +92,32 @@ def open_CSVs(path):
     return aisles_df, departments_df, order_products_prior_df, order_products_train_df, orders_df, products_df, sample_submission_df
     
 def concat_CSVs(path, aisles_df, departments_df, order_products_prior_df, order_products_train_df, orders_df, products_df, sample_submission_df):
+    ''' Matches ID numbers to names and product information. Saves the data frames
+        prior_concat:           Users' prior orders with products listed in orders
+        orders_train_concat:    Users' final orders with products matched to orders
+        orders_train:           User's final orders for with no products 
+                                matched to orders
+        orders_test:            Users' final orders with products to be predicted
+
+    Args:
+        path: str; main path
+    
+        pandas data frames
+        aisles_df:                  aisle information
+        departments_df:             department information
+        order_products_prior_df:    prior orders from user with product num IDs
+        order_products_train_df:    last order from user with product number IDs
+                                    used for validation testing
+        orders_df:                  all user orders information, no product IDs
+                                    includes priors, training, and test data
+        products_df:                product number IDs matched with names
+        sample_submission_df:       Kaggle submission example
+
+    Returns: 
+        None
+        
+    '''
+    
     path = path+'/instacart_2017_05_01'
     
     # Merge the product ID data frames so we know more about each product
@@ -104,9 +147,25 @@ def concat_CSVs(path, aisles_df, departments_df, order_products_prior_df, order_
     orders_train.to_csv(path+'/orders_train.csv', sep=',', index=False)
     orders_test.to_csv(path+'/orders_test.csv', sep=',', index=False)
     
-    return prior_concat, orders_train_concat, orders_train, orders_test
+    return
 
 def open_concat_sets(path):
+    ''' Opens concatenated data sets and sets datatypes
+
+    Args:
+        path: str; main path
+
+    Returns: 
+        pandas data frames;
+        prior_concat:   Users' prior orders with products listed in orders
+        train_concat:   Users' final orders with products matched to orders
+        orders_train:   User's final orders for with no products 
+                        matched to orders
+        orders_test:    Users' final orders with products to be predicted
+                        No product information is associated in data frame
+        
+    '''
+    
     path = path+'/instacart_2017_05_01'
     print('opening prior_concat full set')
     prior_concat = pd.read_csv(path+"/prior_concat.csv", dtype={
@@ -169,6 +228,31 @@ def open_concat_sets(path):
     return prior_concat, train_concat, orders_train, orders_test
     
 def subset_PandT(path, prior_concat, train_concat, user_cutoff):
+    ''' Subsets the priors and training data frames up to a designated user number
+        for easier manipulation when manually extracting features
+    
+        pandas data frames
+        prior_concat:   Users' prior orders with products listed in orders
+        train_concat:   Users' final orders with products matched to orders
+        orders_train:   User's final orders for with no products 
+                        matched to orders
+        orders_test:    Users' final orders with products to be predicted
+        
+
+    Args:
+        path: str; main path
+    
+        Pandas data frames
+        prior_concat:   Users' prior orders with products listed in orders
+        train_concat:   Users' final orders with products matched to orders
+    
+        user_cutoff:    int; Users' final orders with products to be predicted
+
+    Returns: 
+        None
+
+    '''
+    
     path = path+'/training/subset'
     
     # ---- Subset of  of priors set for exploration/setting up features--------
@@ -218,6 +302,21 @@ def subset_PandT(path, prior_concat, train_concat, user_cutoff):
     return
       
 def open_subsets(path, user_cutoff):
+    ''' Opens the subset of prior user orders and final training user orders
+        Subsetted data frames have matching user IDs to allow matching of
+        prior orders to their final training orders.
+
+    Args:
+        path: str; main path
+        user_cutoff:    int; Users' final orders with products to be predicted
+
+    Returns: 
+        pandas data frames
+        sub_Pintrain:   Subsetted user prior orders product information 
+        sub_train:      Subsetted matching user final training orders with products
+        
+    '''
+    
     path = path+'/training/subset'
     print('opening sub_Pintrain')
     sub_Pintrain = pd.read_csv(path+'/'+str(user_cutoff)+'_sub_Pintrain.csv', 
@@ -252,7 +351,19 @@ def open_subsets(path, user_cutoff):
     print('finished opening')
     return sub_Pintrain, sub_train 
 
-def open_training_sets(path):
+def open_train_sets(path):
+    ''' Opens the full set of prior user orders and final training user orders
+        Excludes all users which are found in the Kaggle final orders "test"
+
+    Args:
+        path: str; of main path
+
+    Returns: 
+        pandas data frames
+        priors_in_train:   user prior orders product information 
+        orders_train_info: matching user final training orders with products
+        
+    '''
     path = path+'/training/subset'
     
     print('opening priors_in_train')
@@ -289,6 +400,18 @@ def open_training_sets(path):
     return priors_in_train, orders_train_info
     
 def open_test_sets(path):
+    ''' Opens the full set of users' priors  and final orders that model will 
+        predict reordered products for in the Kaggle competition
+
+    Args:
+        path: str; of main path
+
+    Returns: 
+        pandas data frames
+        priors_in_test:    user prior orders matching test set with product info
+        orders_test:       matching user final orders NO PRODUCTS associated
+        
+    '''
     path = path+'/training/subset'
      
     print('opening priors_in_test')
@@ -322,20 +445,19 @@ def open_test_sets(path):
     return priors_in_test, orders_test
 
 def modes(df, key_cols, value_col, count_col):
-    '''                                                                                                                                                                                                                                                                                                                                                              
-    Pandas does not provide a `mode` aggregation function                                                                                                                                                                                                                                                                                                            
-    for its `GroupBy` objects. This function is meant to fill                                                                                                                                                                                                                                                                                                        
-    that gap, though the semantics are not exactly the same.                                                                                                                                                                                                                                                                                                         
+    ''' Finds most common values in a pandas data column. Ties will be listed
 
-    The input is a DataFrame with the columns `key_cols`                                                                                                                                                                                                                                                                                                             
-    that you would like to group on, and the column                                                                                                                                                                                                                                                                                                                  
-    `value_col` for which you would like to obtain the modes.                                                                                                                                                                                                                                                                                                        
+    Args:
+        df: pandas data frame; data of interest
+        key_cols: list of strings; group by this variable
+        value_col: str; count this variable
+        count_col: str; name of new column with counts
 
-    The output is a DataFrame with a record per group that has at least                                                                                                                                                                                                                                                                                              
-    one mode (null values are not counted). The `key_cols` are included as                                                                                                                                                                                                                                                                                           
-    columns, `value_col` contains lists indicating the modes for each group,                                                                                                                                                                                                                                                                                         
-    and `count_col` indicates how many times each mode appeared in its group.                                                                                                                                                                                                                                                                                        
+    Returns: 
+        df: pandas data frame; sorted data frame by highest frequency occuring
+            count of the variable of interest
     '''
+        
     return df.groupby(key_cols + [value_col]).size() \
              .to_frame(count_col).reset_index() \
              .groupby(key_cols + [count_col])[value_col].unique() \
@@ -344,39 +466,24 @@ def modes(df, key_cols, value_col, count_col):
              .drop_duplicates(subset=key_cols)
              
 def create_training_set(path, priors_concat, final_orders, user_cutoff):
-    # ----------------------- Create design set ------------------------------
+
+    ''' Manually extract all features of interest for training the model
+        Saves the feature sets
+    
+        user_prod: CSV of manually extracted features
+    
+    Args:  
+        path: str; of main path
+    
+        pandas data frames
+        prior_concat:  data about prior orders  for users found in training set  
+        final_orders:  data about final orders for users found in training set  
+    
+        user_cutoff: int; used only for file name saving 
+    
+    Returns:
+        None
     '''
-    prior_concat: The fully concatenated information about prior orders
-    final_orders: fully concatenated information with just final orders
-        AKA either eval_set labeled 'train' or 'test' 
-    
-    
-    user_prod: Main DF storing most of the features.
-    user_prod_ct: number of times each product was ordered by that user
-    tot_uniq_prod: total number of unique products ordered by user
-    tot_prod: total number of products ordered by user
-    order_prod_ct: products in each order and number of those products
-    order_size: size of each order
-    avg_order_size: average size of a user's orders
-    
-    user_id: 
-    product_id: 
-    prod_ct: number of times each product was ordered by that user
-    tot_uniq_prod: total number of unique products ordered by user
-    tot_prod: otal number of products ordered by user
-    avg_order_size: average size of a user's orders
-    ** user_reorder_rate: average percent of an order which contains reordered products
-    tot_num_orders: 
-    prod_x_reordered: 
-    prod_reorder_rate: 
-    aisle_id: 
-    department_id: 
-    prod_days_since_reorder: 
-    '''
-    
-    # dumb merging method, you can write it all in fewer lines later
-    
-    # --------- Feature Set for Training Order Size Classifier -----------------
 
     print('Calculating order_size')
     order_size = priors_concat.groupby(
@@ -394,7 +501,8 @@ def create_training_set(path, priors_concat, final_orders, user_cutoff):
     print('Calculating avg_per_reorders_in_order')
     avg_per_reorders_in_order = order_per_reordered.groupby(
         ['user_id']
-        )['order_per_reordered'].mean().reset_index(name='avg_per_reorders_in_order').sort_values('user_id')
+        )['order_per_reordered'].mean().reset_index(
+            name='avg_per_reorders_in_order').sort_values('user_id')
     user_order = pd.merge(user_order, avg_per_reorders_in_order,
         on=['user_id']
         )
@@ -411,7 +519,9 @@ def create_training_set(path, priors_concat, final_orders, user_cutoff):
             ).reset_index()
 
     print('Calculating num_reordered_items')
-    num_reordered_items = priors_concat.groupby(['order_id', 'user_id'])['reordered'].sum().reset_index(name='num_reordered_items')
+    num_reordered_items = priors_concat.groupby(
+        ['order_id', 'user_id']
+        )['reordered'].sum().reset_index(name='num_reordered_items')
     user_order = pd.merge(user_order, num_reordered_items,
         on=['user_id','order_id']
         )
@@ -425,28 +535,27 @@ def create_training_set(path, priors_concat, final_orders, user_cutoff):
     user_order = pd.merge(user_order, avg_days_bwn_orders,
         on=['user_id','order_id']
         )
-            
-            
+             
     user_order = user_order.sort_values(by=['user_id','order_number'])
     
-    
     print('Calculating avg_reordered_per_order')
-    avg_reordered_per_order = user_order.groupby('user_id')['num_reordered_items'].mean().reset_index(name='avg_reordered_per_order')
+    avg_reordered_per_order = user_order.groupby(
+        'user_id'
+        )['num_reordered_items'].mean().reset_index(
+            name='avg_reordered_per_order'
+            )
     user_order = pd.merge(user_order, avg_reordered_per_order,
             on=['user_id']
             )
         
-            
-    
-
     print('Calculating order_dow_mode')
     # Find most common day of the week for the order
-    # Be careful with this. If classifier gets wonky, take this part out first
     # Returns a tuple of the most frequent days
     order_dow_mode = modes(priors_concat, ['user_id'], 'order_dow', 'count')
-    order_dow_mode = order_dow_mode.rename(index=str, columns={'order_dow': 'order_dow_mode'})
+    order_dow_mode = order_dow_mode.rename(
+        index=str, columns={'order_dow': 'order_dow_mode'}
+        )
     # Tuple is expanded into X feature columns with days of week or NaN=999.0
-    # 999.0 may end up caushing problems
     tmp_order_mode = order_dow_mode['order_dow_mode'].apply(pd.Series)
     tmp_order_mode = tmp_order_mode.fillna(value=999)
     tmp_order_mode = tmp_order_mode.astype(int)
@@ -461,13 +570,6 @@ def create_training_set(path, priors_concat, final_orders, user_cutoff):
     user_order = pd.merge(user_order, order_dow_mode.iloc[:,:4], 
             on=['user_id']
             )
-            
-        
-
-
-
-    
-    # ------ Feature Set for Training Binary Product Reorder Classifier --------
 
     print('Calculating tot_num_orders')
     tot_num_orders = priors_concat.groupby(
@@ -483,7 +585,9 @@ def create_training_set(path, priors_concat, final_orders, user_cutoff):
         user_prod['prod_x_reordered']/(user_prod['tot_num_orders']-1)
     
     print('Calculating avg_size_of_order_with_prod')
-    tmp =  priors_concat[['user_id', 'product_id','order_id']].sort_values(by='user_id')
+    tmp =  priors_concat[
+        ['user_id', 'product_id','order_id']
+        ].sort_values(by='user_id')
     order_size = priors_concat.groupby(
         ['order_id', 'user_id']
         )['product_id'].nunique().reset_index(name='order_size')
@@ -495,9 +599,6 @@ def create_training_set(path, priors_concat, final_orders, user_cutoff):
     user_prod = pd.merge(user_prod, avg_size_of_order_with_prod, 
         on=['user_id', 'product_id']
         )
-
-
-
 
     # print('Calculating prod_dow_mode')
     # # Find most common day of the week for the product
@@ -598,9 +699,7 @@ def create_training_set(path, priors_concat, final_orders, user_cutoff):
     #
     # print('Done calculating average days passed')
     #
-    
-    print('Calculating average days between last order')
-    
+
     
     print('Calculating user_prod_ct')
     user_prod_ct = priors_concat.groupby(
@@ -642,10 +741,7 @@ def create_training_set(path, priors_concat, final_orders, user_cutoff):
         
     user_prod = pd.merge(user_prod, tmp, on = 'user_id')
     
-
-    
     # Apply features relating the user's last order to be predicted
-    
     tmp = final_orders[['user_id', 'order_dow',
            'order_hour_of_day', 'days_since_prior_order']]
     tmp = tmp.groupby('user_id').mean().reset_index()
@@ -665,14 +761,13 @@ def create_training_set(path, priors_concat, final_orders, user_cutoff):
     # Create labels set
     final_orders= final_orders.sort_values(by=['user_id','product_id'])
     tmp_final_orders = final_orders[['user_id','product_id', 'reordered']]
-    user_prod = pd.merge(user_prod, tmp_final_orders, how='left', on=['user_id','product_id'])
+    user_prod = pd.merge(
+        user_prod, tmp_final_orders, how='left', on=['user_id','product_id']
+        )
     user_prod['reordered'] = user_prod['reordered'].fillna(value=0.0)
     
     # Save file
     print('Saving user_prod')
-    # user_prod.to_csv(path+'/training/'+str(user_cutoff)+'_user_prod_withIDs.csv',
-    #         sep=',', index=False)
-
     print('user_cutoff is', user_cutoff)
     if (user_cutoff == 'priors_in_train'):
         user_prod.to_csv(path+'/training/PriorsInTrain__withIDs.csv', 
@@ -684,23 +779,40 @@ def create_training_set(path, priors_concat, final_orders, user_cutoff):
         user_prod.to_csv(path+'/training/PriorsInTest_4testing__withIDs.csv', 
                 sep=',', index=False)
     else: 
-        user_prod.to_csv(path+'/training/PriorsInTrain'+str(user_cutoff)+'_withIDs.csv', 
-                sep=',', index=False)
+        user_prod.to_csv(
+            path+'/training/PriorsInTrain'+str(user_cutoff)+'_withIDs.csv', 
+            sep=',', index=False
+            )
     
     print('Finished creating training set!')
-                
-    
+
     return
     
+def create_testing_set(path, priors_in_test, orders_test, user_cutoff):
 
-
-def create_testing_set(path, all_priors, final_orders, user_cutoff):
+    ''' Extract same features but from the users with priors in the test set only.
+        Save as a test users only set of data
+    
+        user_prod: CSV of manually extracted features
+    
+    Args:  
+        path: str; of main path
+    
+        pandas data frames
+        priors_in_test:  data about prior orders for users found in test set  
+        orders_test:    data about final orders for users found in test set  
+        
+        user_cutoff: int; used only for file name saving 
+    
+    Returns:
+        None
+    '''
 
     print('Calculating order_size')
-    order_size = all_priors.groupby(
+    order_size = priors_in_test.groupby(
         ['order_id', 'user_id']
         )['product_id'].nunique().reset_index(name='order_size')
-    order_per_reordered = all_priors.groupby(
+    order_per_reordered = priors_in_test.groupby(
         ['order_id', 'user_id','order_number']
         )['reordered'].mean().reset_index(
             name='order_per_reordered'
@@ -712,12 +824,14 @@ def create_testing_set(path, all_priors, final_orders, user_cutoff):
     print('Calculating avg_per_reorders_in_order')
     avg_per_reorders_in_order = order_per_reordered.groupby(
         ['user_id']
-        )['order_per_reordered'].mean().reset_index(name='avg_per_reorders_in_order').sort_values('user_id')
+        )['order_per_reordered'].mean().reset_index(
+            name='avg_per_reorders_in_order'
+            ).sort_values('user_id')
     user_order = pd.merge(user_order, avg_per_reorders_in_order,
         on=['user_id']
         )
 
-    user_order = pd.merge(user_order, all_priors[
+    user_order = pd.merge(user_order, priors_in_test[
             ['user_id', 'order_id','order_number',\
             'days_since_prior_order', 'order_dow', 'order_hour_of_day']
             ], on=['user_id', 'order_id', 'order_number']
@@ -729,13 +843,15 @@ def create_testing_set(path, all_priors, final_orders, user_cutoff):
             ).reset_index()
 
     print('Calculating num_reordered_items')
-    num_reordered_items = all_priors.groupby(['order_id', 'user_id'])['reordered'].sum().reset_index(name='num_reordered_items')
+    num_reordered_items = priors_in_test.groupby(
+        ['order_id', 'user_id']
+        )['reordered'].sum().reset_index(name='num_reordered_items')
     user_order = pd.merge(user_order, num_reordered_items,
         on=['user_id','order_id']
         )
 
     print('Calculating avg_days_bwn_orders')
-    avg_days_bwn_orders = all_priors.groupby(
+    avg_days_bwn_orders = priors_in_test.groupby(
         ['order_id', 'user_id']
         )['days_since_prior_order'].mean().reset_index(
             name='avg_days_bwn_orders'
@@ -748,19 +864,22 @@ def create_testing_set(path, all_priors, final_orders, user_cutoff):
     
     
     print('Calculating avg_reordered_per_order')
-    avg_reordered_per_order = user_order.groupby('user_id')['num_reordered_items'].mean().reset_index(name='avg_reordered_per_order')
+    avg_reordered_per_order = user_order.groupby(
+        'user_id')['num_reordered_items'].mean().reset_index(
+            name='avg_reordered_per_order'
+            )
     user_order = pd.merge(user_order, avg_reordered_per_order,
             on=['user_id']
             )
 
     print('Calculating order_dow_mode')
     # Find most common day of the week for the order
-    # Be careful with this. If classifier gets wonky, take this part out first
     # Returns a tuple of the most frequent days
-    order_dow_mode = modes(all_priors, ['user_id'], 'order_dow', 'count')
-    order_dow_mode = order_dow_mode.rename(index=str, columns={'order_dow': 'order_dow_mode'})
+    order_dow_mode = modes(priors_in_test, ['user_id'], 'order_dow', 'count')
+    order_dow_mode = order_dow_mode.rename(
+        index=str, columns={'order_dow': 'order_dow_mode'}
+        )
     # Tuple is expanded into X feature columns with days of week or NaN=999.0
-    # 999.0 may end up caushing problems
     tmp_order_mode = order_dow_mode['order_dow_mode'].apply(pd.Series)
     tmp_order_mode = tmp_order_mode.fillna(value=999)
     tmp_order_mode = tmp_order_mode.astype(int)
@@ -780,10 +899,10 @@ def create_testing_set(path, all_priors, final_orders, user_cutoff):
     # ------ Feature Set for  Binary Product Reorder Classifier --------
 
     print('Calculating tot_num_orders')
-    tot_num_orders = all_priors.groupby(
+    tot_num_orders = priors_in_test.groupby(
         ['user_id']
         )['order_number'].max().reset_index(name='tot_num_orders')
-    prod_x_reordered = all_priors.groupby(
+    prod_x_reordered = priors_in_test.groupby(
         ['user_id', 'product_id']
         )['reordered'].sum().reset_index(name ='prod_x_reordered')    
     user_prod = pd.merge(
@@ -793,8 +912,9 @@ def create_testing_set(path, all_priors, final_orders, user_cutoff):
         user_prod['prod_x_reordered']/(user_prod['tot_num_orders']-1)
     
     print('Calculating avg_size_of_order_with_prod')
-    tmp =  all_priors[['user_id', 'product_id','order_id']].sort_values(by='user_id')
-    order_size = all_priors.groupby(
+    tmp =  priors_in_test[
+        ['user_id', 'product_id','order_id']].sort_values(by='user_id')
+    order_size = priors_in_test.groupby(
         ['order_id', 'user_id']
         )['product_id'].nunique().reset_index(name='order_size')
     tmp_2 = pd.merge(tmp, order_size, on=['user_id','order_id'])
@@ -812,7 +932,7 @@ def create_testing_set(path, all_priors, final_orders, user_cutoff):
     # # Find most common day of the week for the product
     # # Be careful with this. If classifier gets wonky, take this part out first
     # # Returns a tuple of the most frequent days
-    # prod_dow_mode = modes(all_priors, ['user_id','product_id'], 'order_dow', 'count')
+    # prod_dow_mode = modes(priors_in_test, ['user_id','product_id'], 'order_dow', 'count')
     # prod_dow_mode = prod_dow_mode.rename(index=str, columns={'order_dow': 'prod_dow_mode'})
     # # Tuple is expanded into X feature columns with days of week or NaN=999.0
     # # 999.0 may end up caushing problems
@@ -837,7 +957,7 @@ def create_testing_set(path, all_priors, final_orders, user_cutoff):
     # #   2) find the average number of days passed between reordering that product
     #
     # # Take only the value of the max order number
-    # cumm_days_since_last_order = all_priors[
+    # cumm_days_since_last_order = priors_in_test[
     #     ['user_id', 'order_number', 'days_since_prior_order']
     #     ].sort_values(by=['user_id', 'order_number'])
     # cumm_days_since_last_order = cumm_days_since_last_order.groupby(
@@ -848,7 +968,7 @@ def create_testing_set(path, all_priors, final_orders, user_cutoff):
     #     )
     #
     # # Find days since last order of that product
-    # days_passed_btwn_prod = all_priors[
+    # days_passed_btwn_prod = priors_in_test[
     #     ['user_id', 'product_id','order_number','days_since_prior_order']
     #     ].sort_values(by=['user_id', 'product_id'])
     # # Any NaN in order_num_diff values mean it is the first purchase for that product
@@ -909,13 +1029,13 @@ def create_testing_set(path, all_priors, final_orders, user_cutoff):
     
     
     print('Calculating user_prod_ct')
-    user_prod_ct = all_priors.groupby(
+    user_prod_ct = priors_in_test.groupby(
         ['user_id']
         )['product_id'].value_counts().reset_index(name='prod_ct')
     user_prod = pd.merge(user_prod, user_prod_ct, on=['user_id', 'product_id'])
     
     print('Calculating tot_uniq_prod')
-    tot_uniq_prod = all_priors.groupby(
+    tot_uniq_prod = priors_in_test.groupby(
         ['user_id']
         )['product_id'].nunique().reset_index(name='tot_uniq_prod')
     user_prod = pd.merge(user_prod, tot_uniq_prod, on='user_id')
@@ -927,7 +1047,7 @@ def create_testing_set(path, all_priors, final_orders, user_cutoff):
     user_prod = pd.merge(user_prod, tot_prod, on='user_id')
 
     print('Calculating order_prod_ct')
-    order_prod_ct = all_priors.groupby(
+    order_prod_ct = priors_in_test.groupby(
         ['order_id', 'user_id']
         )['product_id'].value_counts().reset_index(name='order_prod_ct')
     order_size = order_prod_ct.groupby(['order_id', 'user_id']
@@ -950,13 +1070,15 @@ def create_testing_set(path, all_priors, final_orders, user_cutoff):
     
     # Apply features relating the user's last order to be predicted
     
-    tmp = final_orders[['user_id', 'order_dow',
+    tmp = orders_test[['user_id', 'order_dow',
            'order_hour_of_day', 'days_since_prior_order']]
     tmp = tmp.groupby('user_id').mean().reset_index()
-    user_prod = pd.merge(user_prod, tmp, on=['user_id']).sort_values(by=['user_id'])
+    user_prod = pd.merge(
+        user_prod, tmp, on=['user_id']).sort_values(by=['user_id']
+        )
     
     # Always sort by user_id and product_id before final steps.
-    final_orders = final_orders.sort_values(by=['user_id'])
+    orders_test = orders_test.sort_values(by=['user_id'])
     user_prod = user_prod.sort_values(by=['user_id','product_id'])
 
     # Rearrange the array in whatever way you like
@@ -977,13 +1099,25 @@ def create_testing_set(path, all_priors, final_orders, user_cutoff):
     print('Finished creating test set!')
 
     
-    
-    
     return
 
-
 def split_prior_test(path, priors_in_test):
+
+    ''' Takes all the prior orders from users in the test set. Splits the last 
+        order of the priors off into its own data frame. Leaves the n-1 orders
+        as its own data frame. Saves as two new CSVs
+    
+    Args:  
+        pandas data frames
+        priors_in_test:  data about prior orders for users found in test set  
+    
+    Returns:
+        None
+    '''
+    
     path = path+'/training/'
+    
+    # Copy data frames and remove unneeded orders
     PriorTest_last_orders = priors_in_test
     PriorTest_priors = priors_in_test
     
@@ -992,22 +1126,33 @@ def split_prior_test(path, priors_in_test):
     
     print('splitting priors in test into groups for training')
     # Split the priors_in_test so the last order can provide labels for training
-    max_ord_num_df = priors_in_test.groupby('user_id')['order_number'].max().reset_index()
     
+    # Find the maximum order number of each user
+    max_ord_num_df = priors_in_test.groupby(
+        'user_id'
+        )['order_number'].max().reset_index()
+    
+    # Loop through data frame (must be a better way to do this?) and create
+    # new data frames for priors and final orders of priors
     for i in max_ord_num_df.index:
-    # for i in [0,1]:
         user = max_ord_num_df['user_id'][i]
         max_ord_num = max_ord_num_df['order_number'][i]
-        
+
+        # remove the user's final orders from priors data frame
         PriorTest_last_orders = \
             PriorTest_last_orders[PriorTest_last_orders['user_id']!=user]
         
+        # Find small data frame containing user's final order
         user_last_order = priors_in_test[\
                 (priors_in_test['user_id']==user) &
                 (priors_in_test['order_number']==max_ord_num)
                 ]
+        # concatenate last order to the last orders data frame
         PriorTest_last_orders= pd.concat([PriorTest_last_orders,user_last_order], axis=0)
 
+        # Take out that user's final orders from the priors data frame
+        # there must be a way to just pop out rows instead of subsetting like this
+        # Look up in the future.
         PriorTest_priors = \
             PriorTest_priors[PriorTest_priors['user_id']!=user]
         
@@ -1021,13 +1166,24 @@ def split_prior_test(path, priors_in_test):
     PriorTest_priors = PriorTest_priors.sort_values(['user_id', 'order_number'])
     PriorTest_last_orders = PriorTest_last_orders.sort_values(['user_id', 'order_number'])
     
+    print('Saving split files')
     PriorTest_priors.to_csv(path+'/PriorsInTest_priors.csv', sep=',', index=False)
     PriorTest_last_orders.to_csv(path+'/PriorsInTest_last_orders.csv', sep=',', index=False)
     
-    return PriorTest_priors, PriorTest_last_orders
-
+    return 
 
 def open_split_prior_test_sets(path):
+    ''' Opens previously split prior orders data from users in the test set.
+    
+    Args: 
+        path: str; of main path
+    
+    Returns:
+        Pandas data frames
+        PriorsInTest_priors:        all orders to n-1
+        PriorsInTest_last_orders:   the last order of the prior orders
+    '''
+    
     path = path+'/training/'
      
     print('opening PriorTest_priors')
@@ -1073,7 +1229,7 @@ def main():
     order_products_train_df, orders_df, products_df, sample_submission_df = \
         open_CSVs(path)
 
-    # This takes ages to concatenate. Don't run it again after the first time!
+    # # This takes ages to concatenate. Don't run it again after the first time!
     prior_concat, orders_train_concat, orders_train, orders_test = concat_CSVs(
         path, aisles_df, departments_df, order_products_prior_df,
         order_products_train_df, orders_df, products_df, sample_submission_df
@@ -1084,28 +1240,28 @@ def main():
     
 
     # # --------------- Create Subsets for small testing -----------------------
-    # choose the subset size. Options are users < 500 and 5000
+    # Choose the subset size. Options are users < 500 and 5000 that are already saved locally.
     
     user_cutoff = 5000
-    # print('Subsetting by user ID lower than', user_cutoff)
-    # subset_PandT(path, prior_concat, train_concat, user_cutoff)
+    print('Subsetting by user ID lower than', user_cutoff)
+    subset_PandT(path, prior_concat, train_concat, user_cutoff)
 
     sub_Pintrain, sub_train = open_subsets(path, user_cutoff)
-
+    
+    # Create training set for model
     create_training_set(path, sub_Pintrain, sub_train, user_cutoff)
 
-
-    
     
     # -------------------------- Full Training Set -----------------------------
-    user_cutoff = 206210
+
+    user_cutoff = 206210 # Maximum number of unique users
 
     # Find all users that are located in train
     # All 'test' users are saved in 'priors_test'
     print('Subsetting by user ID lower than', user_cutoff, 'and found in train')
     subset_PandT(path, prior_concat, train_concat, user_cutoff)
 
-    priors_in_train, orders_train_info = open_training_sets(path)
+    priors_in_train, orders_train_info = open_train_sets(path)
 
     # Create the full training data set for 131209 users
     # Begin by matching priors_train with orders train information
@@ -1120,12 +1276,13 @@ def main():
     # Open split training sets
     PriorTest_priors, PriorTest_last_orders = open_split_prior_test_sets(path)
 
-    print('Creating training set with priors found in test and final orders created from priors in test')
+    print('Creating training set with priors found in test and' \
+        ' final orders created from priors in test')
     create_training_set(path, PriorTest_priors, PriorTest_last_orders, 'PriorTest_priors')
 
-    # print('Concatenating training set of priors-train with priors-lastorder-test')
-    # PriorsInTrain_user_prod_withIDs =
-    #     pd.read_csv(path+'/training/PriorsInTrain_user_prod_withIDs.csv')
+    print('Concatenating training set of priors-train with priors-lastorder-test')
+    PriorsInTrain_user_prod_withIDs =
+        pd.read_csv(path+'/training/PriorsInTrain_user_prod_withIDs.csv')
 
 
     
@@ -1151,7 +1308,12 @@ def main():
 
 if __name__ == '__main__': 
     
-    # main()
+    main()
+    
+    
+    
+    
+    
     
      # -------------------------- TEST ZONE -----------------------------
     path = '/Users/judyjinn/Python/CDIPS/instacart'

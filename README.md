@@ -11,10 +11,10 @@ Goal: Predict products which users will reorder in their next order from their p
 
 Chosen method: Random forest trained using manually extracted features (scikit-learn)
 
-forest_instacart.py is the script for training a random forest. It also contains the script for cross-fold validation to determine optimal forest size and a F1 score calculator
+`forest_instacart.py` is the script for training a random forest. It also contains the script for cross-fold validation to determine optimal forest size and a F1 score calculator
 
-generate_sets.py contains script for generating features from Instacart data
+`generate_sets.py` contains script for generating features from Instacart data
 
-graph_insta.py was used to produce a few simple graphs
+`graph_insta.py` was used to produce a few simple graphs
 
 2017 CDIPS Presentation.pdf are slides from the presentation at the conclusion of the workshop.

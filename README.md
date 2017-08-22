@@ -1,4 +1,4 @@
-# CDIPS_instacart
+# CDIPS_instacart_kaggle
 
 Berkeley Data Science Workshop
 July 15 - Aug 5, 2017

@@ -9,7 +9,7 @@ Team used open source data provided by [Instacart](https://www.instacart.com/dat
 
 Goal: Predict products which users will reorder in their next order from their previous purchasing history.
 
-Chosen method: Random forest trained using manually extracted features.
+Chosen method: Random forest trained using manually extracted features (scikit-learn)
 
 forest_instacart.py is the script for training a random forest. It also contains the script for cross-fold validation to determine optimal forest size and a F1 score calculator
 
